@@ -15,6 +15,7 @@ import re
 from groq import Groq
 from dotenv import load_dotenv
 from src.rag.vector_store import query_store
+from src.rag.reranker import rerank, compare_rankings
 
 load_dotenv()
 
@@ -24,7 +25,10 @@ load_dotenv()
 GROQ_MODEL = "llama-3.1-8b-instant"
 TEMPERATURE       = 0.1    # low = factual, precise, no creativity
 MAX_TOKENS        = 1000
-N_RETRIEVAL       = 5      # number of chunks to retrieve per question
+# N_RETRIEVAL       = 5      # number of chunks to retrieve per question
+
+N_RETRIEVAL    = 10   # retrieve more initially for re-ranking
+N_FINAL        = 5    # keep top 5 after re-ranking
 
 # Confidence thresholds
 HIGH_CONFIDENCE   = 0.65
@@ -190,7 +194,8 @@ def query_rag(
         print(f"\nQuestion: {question}")
         print("Retrieving relevant chunks...")
 
-    # Step 1: Retrieve
+
+    # Step 1: Retrieve broader set
     chunks = query_store(question, n_results=n_results, ticker=ticker)
 
     if not chunks:
@@ -201,9 +206,15 @@ def query_rag(
             "sources":    [],
         }
 
-    if verbose:
-        print(f"Retrieved {len(chunks)} chunks. Querying Groq...")
+    # Step 1b: Re-rank using hybrid scoring
+    original_chunks = [c.copy() for c in chunks]   # save for comparison
+    chunks = rerank(question, chunks, top_k=N_FINAL)
 
+    if verbose:
+        print(f"Retrieved {len(original_chunks)} chunks → re-ranked to top {len(chunks)}. Querying Groq...")
+        compare_rankings(question, original_chunks[:N_FINAL], chunks)
+   
+   
     # Step 2: Build prompt
     system_message, user_message = build_prompt(question, chunks)
 
