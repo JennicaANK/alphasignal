@@ -1,0 +1,165 @@
+{
+  "company": "Apple Inc.",
+  "ticker": "AAPL",
+  "filing_date": "2025",
+  "currency": "USD millions",
+  "years": {
+    "year_1": "2025",
+    "year_2": "2024",
+    "year_3": "2023"
+  },
+  "income_statement": {
+    "total_net_sales": {
+      "year_1": 416161,
+      "year_2": 391035,
+      "year_3": 383285
+    },
+    "gross_margin": {
+      "year_1": 195201,
+      "year_2": 180683,
+      "year_3": 169148
+    },
+    "operating_income": {
+      "year_1": 133050,
+      "year_2": 123216,
+      "year_3": 114301
+    },
+    "net_income": {
+      "year_1": 112010,
+      "year_2": 93736,
+      "year_3": 96995
+    },
+    "eps_basic": {
+      "year_1": null,
+      "year_2": null,
+      "year_3": null
+    },
+    "eps_diluted": {
+      "year_1": null,
+      "year_2": null,
+      "year_3": null
+    }
+  },
+  "operating_expenses": {
+    "research_and_development": {
+      "year_1": 34550,
+      "year_2": 31370,
+      "year_3": 29915
+    },
+    "selling_general_admin": {
+      "year_1": 27601,
+      "year_2": 26097,
+      "year_3": 24932
+    },
+    "total_operating_expenses": {
+      "year_1": 62151,
+      "year_2": 57467,
+      "year_3": 54847
+    }
+  },
+  "product_segments": {
+    "iphone": {
+      "year_1": 209586,
+      "year_2": 201183,
+      "year_3": 200583
+    },
+    "mac": {
+      "year_1": 33708,
+      "year_2": 29984,
+      "year_3": 29357
+    },
+    "ipad": {
+      "year_1": 28023,
+      "year_2": 26694,
+      "year_3": null
+    },
+    "services": {
+      "year_1": 109158,
+      "year_2": 96169,
+      "year_3": 85200
+    },
+    "wearables_home_acc": {
+      "year_1": 35686,
+      "year_2": null,
+      "year_3": 37005
+    }
+  },
+  "yoy_changes": {
+    "income_statement": {
+      "total_net_sales": {
+        "yoy_change_pct": 6.43,
+        "yoy_change_abs": 25126,
+        "direction": "\u25b2"
+      },
+      "gross_margin": {
+        "yoy_change_pct": 8.04,
+        "yoy_change_abs": 14518,
+        "direction": "\u25b2"
+      },
+      "operating_income": {
+        "yoy_change_pct": 7.98,
+        "yoy_change_abs": 9834,
+        "direction": "\u25b2"
+      },
+      "net_income": {
+        "yoy_change_pct": 19.5,
+        "yoy_change_abs": 18274,
+        "direction": "\u25b2"
+      },
+      "eps_basic": {
+        "yoy_change_pct": null,
+        "yoy_change_abs": null,
+        "direction": "\u25bc"
+      },
+      "eps_diluted": {
+        "yoy_change_pct": null,
+        "yoy_change_abs": null,
+        "direction": "\u25bc"
+      }
+    },
+    "operating_expenses": {
+      "research_and_development": {
+        "yoy_change_pct": 10.14,
+        "yoy_change_abs": 3180,
+        "direction": "\u25b2"
+      },
+      "selling_general_admin": {
+        "yoy_change_pct": 5.76,
+        "yoy_change_abs": 1504,
+        "direction": "\u25b2"
+      },
+      "total_operating_expenses": {
+        "yoy_change_pct": 8.15,
+        "yoy_change_abs": 4684,
+        "direction": "\u25b2"
+      }
+    },
+    "product_segments": {
+      "iphone": {
+        "yoy_change_pct": 4.18,
+        "yoy_change_abs": 8403,
+        "direction": "\u25b2"
+      },
+      "mac": {
+        "yoy_change_pct": 12.42,
+        "yoy_change_abs": 3724,
+        "direction": "\u25b2"
+      },
+      "ipad": {
+        "yoy_change_pct": 4.98,
+        "yoy_change_abs": 1329,
+        "direction": "\u25b2"
+      },
+      "services": {
+        "yoy_change_pct": 13.51,
+        "yoy_change_abs": 12989,
+        "direction": "\u25b2"
+      },
+      "wearables_home_acc": {
+        "yoy_change_pct": null,
+        "yoy_change_abs": null,
+        "direction": "\u25bc"
+      }
+    }
+  }
+}
