@@ -1,0 +1,61 @@
+{
+  "ticker": "AAPL",
+  "filing_date": "2024-11-01",
+  "section": "MD&A (Item 7)",
+  "text_length": 6623,
+  "lexicon": {
+    "word_count": 897,
+    "positive_count": 6,
+    "negative_count": 9,
+    "uncertainty_count": 8,
+    "litigious_count": 0,
+    "forward_looking_count": 5,
+    "net_sentiment_score": -0.0033,
+    "positive_ratio": 0.0067,
+    "uncertainty_ratio": 0.0089,
+    "sentiment_label": "NEUTRAL",
+    "top_positive_words": [
+      "increased",
+      "increase",
+      "deliver",
+      "growth"
+    ],
+    "top_negative_words": [
+      "volatility",
+      "risks",
+      "difficult",
+      "risk",
+      "lower"
+    ],
+    "top_uncertainty_words": [
+      "expect",
+      "could",
+      "subject",
+      "variable"
+    ]
+  },
+  "llm_analysis": {
+    "overall_tone": "NEUTRAL",
+    "tone_score": 5,
+    "forward_confidence": 4,
+    "uncertainty_level": "MEDIUM",
+    "key_positive_themes": [
+      "Services gross margin percentage increased",
+      "Net income increased"
+    ],
+    "key_concerns": [
+      "Volatility and downward pressure on gross margins",
+      "Risk Factors"
+    ],
+    "notable_language": "The Company believes, in general, gross margins will be subject to volatility and downward pressure.",
+    "vs_typical_disclosure": "TYPICAL",
+    "management_credibility_signals": "Management is transparent about the potential risks and uncertainties, but also provides some cautious language about future gross margins."
+  },
+  "phrases": {
+    "top_positive_sentences": [],
+    "top_negative_sentences": [
+      "The Company\u2019s future gross margins can be impacted by a variety of factors, as discussed in Part I, Item 1A of this Form 10-K under the heading \u201cRisk Factors.\u201d As a result, the Company believes, in general, gross margins will be subject to volatility and downward pressure.",
+      "For a discussion of the Company\u2019s cybersecurity-related risks, see Item 1A of this Form 10-K under the heading \u201cRisk Factors.\u201d\n\ns in response could be significantly more severe and restrictive."
+    ]
+  }
+}
