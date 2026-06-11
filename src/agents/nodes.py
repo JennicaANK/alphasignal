@@ -7,7 +7,7 @@ a dict of fields to update in the state.
 
 Progress:
     Day 11  fetch_documents     ✅ implemented
-    Day 12  extract_financials  🔧 stub
+    Day 12  extract_financials  ✅ implemented
     Day 13  analyze_sentiment   🔧 stub
     Day 14  check_confidence    🔧 stub
     Day 15  write_report        🔧 stub
@@ -104,17 +104,59 @@ def fetch_documents(state: AlphaSignalState) -> dict:
 # ── Agent 2: Financial Extractor ──────────────────────────────────────────────
 def extract_financials(state: AlphaSignalState) -> dict:
     """
-    Extracts structured financial metrics from the filing.
-    Will be implemented Day 12.
-    """
-    print(f"\n  [Agent 2] Financial Extractor — {state['ticker']}")
-    print(f"  [Agent 2] STUB — will be implemented Day 12")
+    Extracts structured financial metrics from the 10-K filing.
+    Connects financial_extractor.py into the agent pipeline.
 
-    return {
-        "completed_steps": state.get("completed_steps", []) + ["extract_financials"],
-        "current_step":    "analyze_sentiment",
-        "errors":          state.get("errors", []),
-    }
+    Inputs:  state["ticker"], state["filing_date"]
+    Outputs: state["financials"], state["financials_path"]
+    """
+    ticker      = state.get("ticker")
+    filing_date = state.get("filing_date")
+    recheck     = state.get("recheck_count", 0)
+
+    print(f"\n  [Agent 2] Financial Extractor — {ticker}")
+    if recheck > 0:
+        print(f"  [Agent 2] Re-extraction attempt #{recheck}")
+
+    try:
+        from src.utils.financial_extractor import extract_financials as run_extraction
+
+        financials = run_extraction(
+            ticker      = ticker,
+            filing_date = filing_date,
+        )
+
+        if not financials:
+            raise ValueError("Extraction returned empty result")
+
+        # Pull key metrics for logging
+        inc  = financials.get("income_statement", {})
+        rev  = inc.get("total_net_sales", {}).get("year_1", "N/A")
+        ni   = inc.get("net_income",      {}).get("year_1", "N/A")
+
+        print(f"  [Agent 2] Revenue:    {rev:,.0f}M" if isinstance(rev, float) else f"  [Agent 2] Revenue:    {rev}")
+        print(f"  [Agent 2] Net income: {ni:,.0f}M"  if isinstance(ni,  float) else f"  [Agent 2] Net income: {ni}")
+
+        financials_path = f"data/processed/{ticker}_{filing_date}_financials.json"
+
+        return {
+            "financials":      financials,
+            "financials_path": financials_path,
+            "completed_steps": state.get("completed_steps", []) + ["extract_financials"],
+            "current_step":    "analyze_sentiment",
+            "errors":          state.get("errors", []),
+        }
+
+    except Exception as e:
+        error_msg = f"extract_financials failed: {str(e)}"
+        print(f"  [Agent 2] ERROR: {error_msg}")
+
+        return {
+            "financials":      None,
+            "errors":          state.get("errors", []) + [error_msg],
+            "completed_steps": state.get("completed_steps", []) + ["extract_financials_error"],
+            "current_step":    "analyze_sentiment",
+        }
 
 
 # ── Agent 3: Sentiment Analyzer ───────────────────────────────────────────────
