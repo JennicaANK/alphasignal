@@ -125,10 +125,13 @@ if __name__ == "__main__":
 
     print("-" * 55)
     print("\nPipeline complete.")
-    print(f"\nCompleted steps: {final_state['completed_steps']}")
-    print(f"Confidence:      {final_state.get('confidence_score')} ({final_state.get('confidence_label')})")
-    print(f"Report preview:  {final_state.get('report')}")
+    print(f"\nTicker:          {final_state.get('ticker')}")
+    print(f"Company:         {final_state.get('company_name', 'N/A')}")
+    print(f"Filing date:     {final_state.get('filing_date', 'N/A')}")
+    print(f"Chunks stored:   {final_state.get('chunks_path', 'N/A')}")
+    print(f"Completed steps: {final_state['completed_steps']}")
+    print(f"Errors:          {final_state.get('errors', [])}")
 
     print("\n" + "=" * 55)
-    print("Graph wiring verified. Ready for agent implementation.")
+    print("Agent 1 complete. Agents 2-5 still stubs.")
     print("=" * 55)
