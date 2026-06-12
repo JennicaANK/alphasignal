@@ -163,16 +163,56 @@ def extract_financials(state: AlphaSignalState) -> dict:
 def analyze_sentiment(state: AlphaSignalState) -> dict:
     """
     Analyzes tone and language in the MD&A section.
-    Will be implemented Day 13.
-    """
-    print(f"\n  [Agent 3] Sentiment Analyzer — {state['ticker']}")
-    print(f"  [Agent 3] STUB — will be implemented Day 13")
+    Connects sentiment_analyzer.py into the agent pipeline.
 
-    return {
-        "completed_steps": state.get("completed_steps", []) + ["analyze_sentiment"],
-        "current_step":    "check_confidence",
-        "errors":          state.get("errors", []),
-    }
+    Inputs:  state["ticker"], state["filing_date"]
+    Outputs: state["sentiment"], state["sentiment_path"]
+    """
+    ticker      = state.get("ticker")
+    filing_date = state.get("filing_date")
+
+    print(f"\n  [Agent 3] Sentiment Analyzer — {ticker}")
+
+    try:
+        from src.utils.sentiment_analyzer import analyze_sentiment as run_sentiment
+
+        sentiment = run_sentiment(
+            ticker      = ticker,
+            filing_date = filing_date,
+        )
+
+        if not sentiment:
+            raise ValueError("Sentiment analysis returned empty result")
+
+        lex   = sentiment.get("lexicon", {})
+        llm   = sentiment.get("llm_analysis", {})
+
+        print(f"  [Agent 3] Sentiment:        {lex.get('sentiment_label', 'N/A')}")
+        print(f"  [Agent 3] Net score:        {lex.get('net_sentiment_score', 'N/A')}")
+        print(f"  [Agent 3] Tone:             {llm.get('overall_tone', 'N/A')}")
+        print(f"  [Agent 3] Tone score:       {llm.get('tone_score', 'N/A')}/10")
+        print(f"  [Agent 3] Fwd confidence:   {llm.get('forward_confidence', 'N/A')}/10")
+
+        sentiment_path = f"data/processed/{ticker}_{filing_date}_sentiment.json"
+
+        return {
+            "sentiment":       sentiment,
+            "sentiment_path":  sentiment_path,
+            "completed_steps": state.get("completed_steps", []) + ["analyze_sentiment"],
+            "current_step":    "check_confidence",
+            "errors":          state.get("errors", []),
+        }
+
+    except Exception as e:
+        error_msg = f"analyze_sentiment failed: {str(e)}"
+        print(f"  [Agent 3] ERROR: {error_msg}")
+
+        return {
+            "sentiment":       None,
+            "errors":          state.get("errors", []) + [error_msg],
+            "completed_steps": state.get("completed_steps", []) + ["analyze_sentiment_error"],
+            "current_step":    "check_confidence",
+        }
 
 
 # ── Agent 4: Self-Checker ─────────────────────────────────────────────────────
