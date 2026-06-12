@@ -218,22 +218,124 @@ def analyze_sentiment(state: AlphaSignalState) -> dict:
 # ── Agent 4: Self-Checker ─────────────────────────────────────────────────────
 def check_confidence(state: AlphaSignalState) -> dict:
     """
-    Evaluates pipeline quality and triggers re-extraction if needed.
-    Will be implemented Day 14.
+    Evaluates the quality of the entire pipeline so far.
+    Computes a combined confidence score from two signals:
+
+        Financial completeness (70% weight)
+            How many key metrics were successfully extracted?
+            Null values mean the LLM couldn't find the data.
+
+        Sentiment quality (30% weight)
+            Did the LLM dimensional analysis succeed?
+            Did it produce a meaningful tone score?
+
+    If combined confidence < 0.50 and recheck_count < 2:
+        → sets needs_recheck = True
+        → pipeline loops back to extract_financials
+
+    This is uncertainty quantification at the pipeline level —
+    not just on individual answers but on the entire analysis.
     """
-    print(f"\n  [Agent 4] Self-Checker — evaluating pipeline confidence")
-    print(f"  [Agent 4] STUB — will be implemented Day 14")
+    ticker        = state.get("ticker")
+    financials    = state.get("financials", {})
+    sentiment     = state.get("sentiment", {})
+    recheck_count = state.get("recheck_count", 0)
+    errors        = state.get("errors", [])
+
+    print(f"\n  [Agent 4] Self-Checker — evaluating pipeline quality")
+
+    # ── Score 1: Financial Completeness ───────────────────────────────────────
+    # Check how many of our key metrics were successfully extracted
+    key_metrics = [
+        ("income_statement",    "total_net_sales"),
+        ("income_statement",    "net_income"),
+        ("income_statement",    "gross_margin"),
+        ("income_statement",    "operating_income"),
+        ("operating_expenses",  "research_and_development"),
+        ("operating_expenses",  "total_operating_expenses"),
+        ("product_segments",    "iphone"),
+        ("product_segments",    "services"),
+    ]
+
+    filled  = 0
+    total   = len(key_metrics)
+
+    for category, metric in key_metrics:
+        try:
+            val = financials.get(category, {}).get(metric, {}).get("year_1")
+            if val is not None and isinstance(val, (int, float)) and val > 0:
+                filled += 1
+        except (AttributeError, TypeError):
+            pass
+
+    financial_completeness = round(filled / total, 4) if total > 0 else 0.0
+    print(f"  [Agent 4] Financial completeness: {filled}/{total} key metrics ({financial_completeness:.0%})")
+
+    # ── Score 2: Sentiment Quality ────────────────────────────────────────────
+    sentiment_quality = 0.0
+    if sentiment:
+        llm_result  = sentiment.get("llm_analysis", {})
+        tone_score  = llm_result.get("tone_score")
+        tone_label  = llm_result.get("overall_tone", "UNKNOWN")
+        lex_count   = sentiment.get("lexicon", {}).get("word_count", 0)
+
+        tone_ok     = tone_score is not None and tone_label != "UNKNOWN"
+        text_ok     = lex_count > 100
+
+        if tone_ok and text_ok:
+            sentiment_quality = 1.0
+        elif tone_ok or text_ok:
+            sentiment_quality = 0.6
+        else:
+            sentiment_quality = 0.2
+
+    print(f"  [Agent 4] Sentiment quality:      {sentiment_quality:.0%}")
+
+    # ── Score 3: Error penalty ────────────────────────────────────────────────
+    error_penalty = min(len(errors) * 0.1, 0.3)
+    if error_penalty > 0:
+        print(f"  [Agent 4] Error penalty:          -{error_penalty:.0%} ({len(errors)} errors)")
+
+    # ── Combined confidence ───────────────────────────────────────────────────
+    raw_confidence = (
+        (0.70 * financial_completeness) +
+        (0.30 * sentiment_quality)
+    ) - error_penalty
+
+    confidence_score = round(max(0.0, min(1.0, raw_confidence)), 4)
+
+    # ── Confidence label ──────────────────────────────────────────────────────
+    if confidence_score >= 0.70:
+        label = "HIGH"
+    elif confidence_score >= 0.50:
+        label = "MEDIUM"
+    else:
+        label = "LOW"
+
+    print(f"  [Agent 4] Combined confidence:    {confidence_score:.4f} [{label}]")
+
+    # ── Routing decision ──────────────────────────────────────────────────────
+    needs_recheck = False
+
+    if confidence_score < 0.50 and recheck_count < 2:
+        needs_recheck  = True
+        recheck_count += 1
+        print(f"  [Agent 4] Decision: RE-EXTRACT (confidence too low, attempt {recheck_count})")
+    elif recheck_count >= 2:
+        print(f"  [Agent 4] Decision: PROCEED (max rechecks reached — reporting with warning)")
+    else:
+        print(f"  [Agent 4] Decision: PROCEED (confidence acceptable)")
 
     return {
-        "confidence_score": 0.75,
-        "confidence_label": "HIGH",
-        "needs_recheck":    False,
-        "recheck_count":    state.get("recheck_count", 0),
+        "confidence_score": confidence_score,
+        "confidence_label": label,
+        "needs_recheck":    needs_recheck,
+        "recheck_count":    recheck_count,
         "completed_steps":  state.get("completed_steps", []) + ["check_confidence"],
         "current_step":     "write_report",
-        "errors":           state.get("errors", []),
+        "errors":           errors,
     }
-
+    
 
 # ── Agent 5: Report Writer ────────────────────────────────────────────────────
 def write_report(state: AlphaSignalState) -> dict:
