@@ -335,23 +335,211 @@ def check_confidence(state: AlphaSignalState) -> dict:
         "current_step":     "write_report",
         "errors":           errors,
     }
-    
+
+
 
 # ── Agent 5: Report Writer ────────────────────────────────────────────────────
 def write_report(state: AlphaSignalState) -> dict:
     """
-    Generates the final research report.
-    Will be implemented Day 15.
-    """
-    print(f"\n  [Agent 5] Report Writer — generating report")
-    print(f"  [Agent 5] STUB — will be implemented Day 15")
+    Synthesizes all pipeline outputs into a professional research report.
 
-    return {
-        "report":          f"[STUB] Report for {state['ticker']} — to be generated Day 15",
-        "completed_steps": state.get("completed_steps", []) + ["write_report"],
-        "current_step":    "complete",
-        "errors":          state.get("errors", []),
-    }
+    Combines:
+        - Structured financial metrics from Agent 2
+        - Sentiment analysis from Agent 3
+        - Confidence scores from Agent 4
+        - 3 targeted RAG answers (risks, strategy, outlook)
+
+    Outputs a formatted markdown report saved to reports/
+    """
+    ticker         = state.get("ticker")
+    company        = state.get("company_name", ticker)
+    filing_date    = state.get("filing_date", "unknown")
+    financials     = state.get("financials",  {})
+    sentiment      = state.get("sentiment",   {})
+    confidence     = state.get("confidence_score", 0.0)
+    conf_label     = state.get("confidence_label",  "UNKNOWN")
+    errors         = state.get("errors", [])
+
+    print(f"\n  [Agent 5] Report Writer — generating report for {company}")
+
+    try:
+        import os
+        from pathlib import Path
+        from groq import Groq
+        from dotenv import load_dotenv
+        from src.rag.rag_pipeline import query_rag
+
+        load_dotenv()
+
+        # ── Step 1: Pull key financial figures ────────────────────────────────
+        inc  = financials.get("income_statement",   {})
+        opex = financials.get("operating_expenses", {})
+        seg  = financials.get("product_segments",   {})
+        yoy  = financials.get("yoy_changes",        {})
+        yrs  = financials.get("years", {"year_1": "2025", "year_2": "2024", "year_3": "2023"})
+
+        def val(category, metric, year="year_1"):
+            try:
+                v = financials.get(category, {}).get(metric, {}).get(year)
+                return f"{v:,.0f}" if isinstance(v, (int, float)) else "N/A"
+            except Exception:
+                return "N/A"
+
+        def pct(category, metric):
+            try:
+                p = yoy.get(category, {}).get(metric, {}).get("yoy_change_pct")
+                d = yoy.get(category, {}).get(metric, {}).get("direction", "")
+                return f"{d}{p:+.1f}%" if p is not None else "N/A"
+            except Exception:
+                return "N/A"
+
+        y1 = yrs.get("year_1", "2025")
+        y2 = yrs.get("year_2", "2024")
+        y3 = yrs.get("year_3", "2023")
+
+        # ── Step 2: Pull sentiment signals ────────────────────────────────────
+        lex       = sentiment.get("lexicon",      {})
+        llm_sent  = sentiment.get("llm_analysis", {})
+        phrases   = sentiment.get("phrases",      {})
+
+        tone        = llm_sent.get("overall_tone",       "N/A")
+        tone_score  = llm_sent.get("tone_score",          "N/A")
+        fwd_conf    = llm_sent.get("forward_confidence",  "N/A")
+        pos_themes  = llm_sent.get("key_positive_themes", [])
+        concerns    = llm_sent.get("key_concerns",        [])
+        notable     = llm_sent.get("notable_language",    "")
+        net_score   = lex.get("net_sentiment_score",      "N/A")
+
+        # ── Step 3: Targeted RAG questions ────────────────────────────────────
+        print(f"  [Agent 5] Running targeted RAG queries...")
+
+        rag_questions = [
+            "What are the top 3 risk factors for this company?",
+            "What is the company's strategy and competitive advantages?",
+            "What is management's outlook for the next fiscal year?",
+        ]
+
+        rag_answers = {}
+        for q in rag_questions:
+            result = query_rag(q, ticker=ticker, verbose=False)
+            rag_answers[q] = {
+                "answer":     result.get("answer", "Not found"),
+                "confidence": result.get("confidence", {}).get("confidence", 0),
+            }
+            print(f"  [Agent 5] RAG: '{q[:50]}...' → confidence {rag_answers[q]['confidence']:.2f}")
+
+        # ── Step 4: Generate report with LLM ─────────────────────────────────
+        print(f"  [Agent 5] Generating report via Groq...")
+
+        fin_summary = f"""
+FINANCIAL METRICS (USD millions):
+Revenue:        {val('income_statement','total_net_sales')} ({y1}) | {val('income_statement','total_net_sales','year_2')} ({y2}) | YoY {pct('income_statement','total_net_sales')}
+Gross Margin:   {val('income_statement','gross_margin')}    ({y1}) | {val('income_statement','gross_margin','year_2')}    ({y2}) | YoY {pct('income_statement','gross_margin')}
+Net Income:     {val('income_statement','net_income')}      ({y1}) | {val('income_statement','net_income','year_2')}      ({y2}) | YoY {pct('income_statement','net_income')}
+R&D:            {val('operating_expenses','research_and_development')} ({y1}) | YoY {pct('operating_expenses','research_and_development')}
+iPhone:         {val('product_segments','iphone')}    ({y1}) | YoY {pct('product_segments','iphone')}
+Services:       {val('product_segments','services')}  ({y1}) | YoY {pct('product_segments','services')}
+Mac:            {val('product_segments','mac')}       ({y1}) | YoY {pct('product_segments','mac')}"""
+
+        sent_summary = f"""
+SENTIMENT ANALYSIS:
+Overall tone:       {tone}
+Tone score:         {tone_score}/10
+Forward confidence: {fwd_conf}/10
+Net sentiment:      {net_score}
+Key positives:      {', '.join(pos_themes) if pos_themes else 'None identified'}
+Key concerns:       {', '.join(concerns)   if concerns   else 'None identified'}
+Notable language:   {notable}"""
+
+        rag_summary = "\n".join([
+            f"Q: {q}\nA: {v['answer'][:300]}\nConfidence: {v['confidence']:.2f}\n"
+            for q, v in rag_answers.items()
+        ])
+
+        system_msg = f"""You are a senior financial analyst writing a professional investment research report.
+Write a structured markdown report based on the provided data.
+Be factual, precise, and analytical. Use the exact numbers provided.
+Format: use ## headers, bullet points for lists, bold for key figures."""
+
+        user_msg = f"""Write a professional research report for {company} ({ticker}).
+
+{fin_summary}
+
+{sent_summary}
+
+RAG ANALYSIS:
+{rag_summary}
+
+Pipeline confidence: {confidence:.4f} [{conf_label}]
+Filing date: {filing_date}
+
+Structure the report with these sections:
+1. Executive Summary (3-4 sentences with the most important findings)
+2. Financial Performance (key metrics with YoY analysis)
+3. Segment Analysis (breakdown by product/service)
+4. Management Tone & Sentiment
+5. Key Risks
+6. Investment Signals
+7. Data Quality Note (mention confidence score)
+
+Keep it concise and professional. Maximum 600 words."""
+
+        client   = Groq(api_key=os.getenv("GROQ_API_KEY"))
+        response = client.chat.completions.create(
+            model       = "llama-3.1-8b-instant",
+            messages    = [
+                {"role": "system", "content": system_msg},
+                {"role": "user",   "content": user_msg},
+            ],
+            temperature = 0.2,
+            max_tokens  = 1200,
+        )
+
+        report_body = response.choices[0].message.content.strip()
+
+        # ── Step 5: Assemble final report ─────────────────────────────────────
+        report = f"""# AlphaSignal Research Report: {company} ({ticker})
+
+**Generated by AlphaSignal Multi-Agent Pipeline**
+**Filing:** {filing_date} | **Pipeline Confidence:** {confidence:.4f} [{conf_label}]
+**Errors:** {len(errors)} | **Agents completed:** {len(state.get('completed_steps', []))}
+
+---
+
+{report_body}
+
+---
+*Report generated autonomously by AlphaSignal — a multi-agent financial intelligence system.*
+*Data source: SEC EDGAR 10-K filing. LLM: Groq Llama-3.1-8b-instant.*
+"""
+
+        # ── Step 6: Save report ───────────────────────────────────────────────
+        Path("reports").mkdir(exist_ok=True)
+        report_path = f"reports/{ticker}_{filing_date}_report.md"
+        with open(report_path, "w", encoding="utf-8") as f:
+            f.write(report)
+
+        print(f"  [Agent 5] Report saved to: {report_path}")
+        print(f"  [Agent 5] Report length:   {len(report):,} characters")
+
+        return {
+            "report":          report,
+            "report_path":     report_path,
+            "completed_steps": state.get("completed_steps", []) + ["write_report"],
+            "current_step":    "complete",
+            "errors":          errors,
+        }
+
+    except Exception as e:
+        error_msg = f"write_report failed: {str(e)}"
+        print(f"  [Agent 5] ERROR: {error_msg}")
+        return {
+            "report":          f"Report generation failed: {error_msg}",
+            "errors":          state.get("errors", []) + [error_msg],
+            "completed_steps": state.get("completed_steps", []) + ["write_report_error"],
+            "current_step":    "complete",
+        }
+        
 
 
 # ── Routing Function ──────────────────────────────────────────────────────────

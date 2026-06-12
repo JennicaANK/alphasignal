@@ -15,23 +15,23 @@
     "uncertainty_ratio": 0.0089,
     "sentiment_label": "NEUTRAL",
     "top_positive_words": [
-      "deliver",
       "growth",
       "increase",
+      "deliver",
       "increased"
     ],
     "top_negative_words": [
-      "volatility",
-      "risk",
       "lower",
-      "risks",
-      "difficult"
+      "difficult",
+      "risk",
+      "volatility",
+      "risks"
     ],
     "top_uncertainty_words": [
-      "expect",
       "could",
       "subject",
-      "variable"
+      "variable",
+      "expect"
     ]
   },
   "llm_analysis": {
