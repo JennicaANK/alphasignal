@@ -480,7 +480,7 @@ Structure the report with these sections:
 4. Management Tone & Sentiment
 5. Key Risks
 6. Investment Signals
-7. Data Quality Note (mention confidence score)
+7. Data Quality Note: State that pipeline confidence is {confidence:.4f} [{conf_label}] based on data completeness scoring. Do not reference individual RAG query scores here.
 
 Keep it concise and professional. Maximum 600 words."""
 
@@ -539,7 +539,7 @@ Keep it concise and professional. Maximum 600 words."""
             "completed_steps": state.get("completed_steps", []) + ["write_report_error"],
             "current_step":    "complete",
         }
-        
+
 
 
 # ── Routing Function ──────────────────────────────────────────────────────────
