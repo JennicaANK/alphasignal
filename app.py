@@ -397,9 +397,64 @@ with tab2:
 
 with tab3:
     if report:
-        st.markdown(report)
+        # Fix dollar sign rendering in Streamlit markdown
+        report_display = report.replace("$", "\\$")
+        st.markdown(report_display)
     else:
         st.info("No report available. Run the pipeline first.")
+
+
+# ── PDF Export ────────────────────────────────────────────────────────────────
+if results and financials and report:
+    st.divider()
+    st.subheader("📥 Export Report")
+
+    col_dl, col_info = st.columns([1, 3])
+
+    with col_dl:
+        if st.button("Generate PDF", type="primary", use_container_width=True):
+            with st.spinner("Building PDF report..."):
+                try:
+                    from src.utils.pdf_generator import generate_pdf
+                    from glob import glob
+                    import json
+
+                    # Load full sentiment data
+                    sent_files = sorted(glob(f"data/processed/{ticker_input}_*_sentiment.json"))
+                    full_sentiment = {}
+                    if sent_files:
+                        with open(sent_files[-1]) as f:
+                            full_sentiment = json.load(f)
+
+                    pdf_bytes = generate_pdf(
+                        ticker      = ticker_input,
+                        company     = financials.get("company", ticker_input),
+                        filing_date = financials.get("filing_date", "unknown"),
+                        financials  = financials,
+                        sentiment   = full_sentiment,
+                        report_text = report,
+                        confidence  = results.get("financials", {}).get("confidence_score", 1.0),
+                        conf_label  = "HIGH",
+                    )
+
+                    st.session_state["pdf_bytes"] = pdf_bytes
+                    st.success("PDF ready to download!")
+
+                except Exception as e:
+                    st.error(f"PDF generation failed: {e}")
+
+    with col_info:
+        st.caption("Downloads a formatted PDF including financial tables, sentiment analysis, and the full AI-generated research report.")
+
+    # Show download button once PDF is generated
+    if "pdf_bytes" in st.session_state:
+        st.download_button(
+            label     = "⬇️ Download PDF Report",
+            data      = st.session_state["pdf_bytes"],
+            file_name = f"AlphaSignal_{ticker_input}_Report.pdf",
+            mime      = "application/pdf",
+            use_container_width = False,
+        )
 
 # ── Footer ────────────────────────────────────────────────────────────────────
 st.divider()
