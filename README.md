@@ -1,3 +1,13 @@
+---
+title: AlphaSignal
+emoji: 📈
+colorFrom: blue
+colorTo: green
+sdk: docker
+app_port: 7860
+pinned: false
+---
+
 # AlphaSignal 📈
 ### Multi-Agent Financial Intelligence System
 
