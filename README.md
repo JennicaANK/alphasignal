@@ -1,3 +1,13 @@
+---
+title: AlphaSignal
+emoji: 📈
+colorFrom: blue
+colorTo: green
+sdk: docker
+app_file: app_deploy.py
+pinned: false
+---
+
 # AlphaSignal 📈
 ### Production-Grade Multi-Agent Financial Intelligence System
 
